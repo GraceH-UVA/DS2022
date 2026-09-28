@@ -258,32 +258,37 @@ uv add pymongo
 uv run --with pymongo python -c "import pymongo; print(pymongo.__version__)"
 ```
 
-**Minimal connect example** (uses the same Atlas env vars as `mongosh`):
-
-```python
-import os
-from pymongo import MongoClient
-
-url = os.environ["MONGODB_ATLAS_URL"]
-user = os.environ["MONGODB_ATLAS_USER"]
-password = os.environ["MONGODB_ATLAS_PWD"]
-
-client = MongoClient(url, username=user, password=password)
-print(client.list_database_names())
-
-db = client["sample_mflix"]
-print(db.list_collection_names())
-print(db.movies.count_documents({}))
-client.close()
-```
-
-Save as `mongo_connect.py` in this folder (or a scratch project), then:
+All scripts below use the same Atlas env vars as `mongosh` (`MONGODB_ATLAS_URL`, `MONGODB_ATLAS_USER`, `MONGODB_ATLAS_PWD`). Confirm they are set (`echo $MONGODB_ATLAS_USER`) before running. Work from this directory:
 
 ```bash
-uv run --with pymongo mongo_connect.py
+cd class/05-nosql
 ```
 
-After that, mirror the shell CRUD work in Python: `insert_one` / `insert_many`, `find` / `find_one`, `update_one`, `delete_one` on a `mypractice.items` collection. Prefer `uv run` (or `uv run --with pymongo ...`) so the interpreter matches the environment where PyMongo is installed.
+**Shared connection:** [`database.py`](database.py) builds a shared `client`, `db` (`mypractice`), and `items` collection. [`02-mongo_setup.py`](02-mongo_setup.py) imports that module; the other scripts open their own client with the same env vars.
+
+**Numbered scripts (run in order 01 → 07):**
+
+| Script | Purpose |
+|--------|---------|
+| [`01-sample_mflix.py`](01-sample_mflix.py) | Connect to `sample_mflix`, list collections and document counts |
+| [`02-mongo_setup.py`](02-mongo_setup.py) | Use shared client from `database.py`; show server version, databases, and `mypractice` collection counts |
+| [`03-mongo_create.py`](03-mongo_create.py) | Create `mypractice` / `items` and insert sample documents (apple, banana, orange) |
+| [`04-mongo_read.py`](04-mongo_read.py) | Read documents: find one, find by filter, count |
+| [`05-mongo_update.py`](05-mongo_update.py) | Update documents with `$set` |
+| [`06-mongo_delete.py`](06-mongo_delete.py) | Delete one document and show remaining |
+| [`07-mongo_summary.py`](07-mongo_summary.py) | Print final summary of `mypractice` collections and `items` |
+
+```bash
+uv run --with pymongo 01-sample_mflix.py
+uv run --with pymongo 02-mongo_setup.py
+uv run --with pymongo 03-mongo_create.py
+uv run --with pymongo 04-mongo_read.py
+uv run --with pymongo 05-mongo_update.py
+uv run --with pymongo 06-mongo_delete.py
+uv run --with pymongo 07-mongo_summary.py
+```
+
+If you already ran `uv add pymongo` in a project, plain `uv run 01-sample_mflix.py` (and so on) is enough.
 
 ## Advanced Concepts (Optional)
 
