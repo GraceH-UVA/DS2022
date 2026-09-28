@@ -224,7 +224,7 @@ glossary down to GlossSeeAlso and print both SeeAlso strings with jq.
 
 Pipe a remote response into `jq` the same way you pipe a file.
 
-Google Finance has no public JSON API, so we use free market APIs that return real JSON with no signup: [CoinGecko](https://www.coingecko.com/en/api) (crypto) and [Frankfurter](https://frankfurter.dev/) (FX rates).
+Google Finance has no public JSON API, so we use free market APIs that return real JSON with no signup: [CoinGecko](https://docs.coingecko.com/) (crypto) and [Frankfurter](https://frankfurter.dev/) (FX rates).
 
 ### 2a. Nested object — live crypto prices
 
