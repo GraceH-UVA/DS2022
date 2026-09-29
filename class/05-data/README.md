@@ -9,7 +9,7 @@ JSON (JavaScript Object Notation) is the most common format for exchanging data 
 **Time:** about 20 minutes — **`jq` ~10 min** (Exercises 1–2), then **Python ~10 min** (Exercise 3). Work from this directory:
 
 ```bash
-cd class/06-data
+cd class/05-data
 ```
 
 Sample files live in [`data/`](data/). Full practice kit (optional later): [nmagee/json-practice](https://github.com/nmagee/json-practice/).
