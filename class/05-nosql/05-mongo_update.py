@@ -1,29 +1,34 @@
 #!/usr/bin/env python3
-
-from pymongo import MongoClient, errors
-from bson.json_util import dumps
-import pprint
+"""Update documents in mypractice.fruit with $set."""
+import logging
 import os
 
-# Use environment variables from README: MONGODB_ATLAS_URL, MONGODB_ATLAS_USER, MONGODB_ATLAS_PWD
-uri = os.getenv('MONGODB_ATLAS_URL')
-username = os.getenv('MONGODB_ATLAS_USER')
-password = os.getenv('MONGODB_ATLAS_PWD')
+from bson.json_util import dumps
+from pymongo import MongoClient
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger(__name__)
+
+uri = os.getenv("MONGODB_ATLAS_URL")
+username = os.getenv("MONGODB_ATLAS_USER")
+password = os.getenv("MONGODB_ATLAS_PWD")
 
 client = MongoClient(uri, username=username, password=password, connectTimeoutMS=200, retryWrites=True)
 db = client.mypractice
-items = db.items
+fruit = db.fruit
 
-# Update one document - set new quantity for "apple" using $set
-items.update_one({"name": "apple"}, {"$set": {"quantity": 8}})
+log.info("Before update:")
+get_record = fruit.find({"name": "apple"})
+log.info("%s", dumps(list(get_record), indent=2))
 
-# Add an optional field with $set
-items.update_one({"name": "apple"}, {"$set": {"restocked": True}})
+log.info("Updating apple quantity to 8 and restocked to True:")
+fruit.update_one({"name": "apple"}, {"$set": {"quantity": 8}})
+fruit.update_one({"name": "apple"}, {"$set": {"restocked": True}})
 
-# The full list of MongoDB operators: https://www.mongodb.com/docs/manual/reference/operator/
+# Full list of MongoDB operators: https://www.mongodb.com/docs/manual/reference/operator/
 
-get_record = items.find({"name": "apple"})
-print(dumps(list(get_record), indent=2))
+log.info("After update:")
+get_record = fruit.find({"name": "apple"})
+log.info("%s", dumps(list(get_record), indent=2))
 
-# Close the connection
 client.close()
