@@ -26,15 +26,34 @@ This course will be using MongoDB Atlas, a cloud-based Mongo service, for hands-
 
 ## In-class exercises
 
+### Sync your local repo
+
+Pull the latest course materials (including new examples and sample files for this activity) before you start. Follow the [Weekly sync](../../README.md#weekly-sync) steps.
+
 ### The `mongosh` CLI tool
 
-Install `mongosh` on your laptop with a package manager (Homebrew or apt). Follow [MongoDB Setup](../../setup/mongodb.md) if you have not already, then confirm:
+`mongosh` is the MongoDB shell: a command-line program you use to connect to Atlas and run database commands interactively.
+
+If you don't have it installed yet, follow [MongoDB Setup](../../setup/mongodb.md), then confirm:
 
 ```bash
 mongosh --version
 ```
 
 **1. Open a terminal** in Cursor (or your usual shell). On Windows, use a **WSL** terminal so `mongosh` and your Atlas env vars match the Linux setup from the course docs.
+
+**Confirm**
+```bash
+printenv | grep -i "mongo"
+```
+
+**Example:**
+```text
+MONGODB_ATLAS_URL=mongodb+srv://ds2022.tmwdrjn.mongodb.net/
+MONGODB_ATLAS_USER=mst3k            
+MONGODB_ATLAS_PWD=Pz8MvcN2apydHSZUq
+```
+The values of your url, username, and password will be different. **If you don't have these environment variables set, go back to [Get Connection String](../../setup/mongodb.md#3-get-connection-string-url) and [Save Connection String](../../setup/mongodb.md#4-save-connection-string).**
 
 **2. Connect**
 
@@ -67,6 +86,8 @@ Congrats, you're logged in to the Atlas cluster and you're ready to explore the 
 Type `exit` to leave the `mongosh` CLI and return to your bash shell.
 
 **3. Explore the `sample_mflix` database**
+
+Most `mongosh` commands use JavaScript syntax: objects, methods, trailing semicolons, and **dot chaining** to call methods in sequence (e.g. `db.movies.find().limit(3).pretty()`).
 
 List all databases:
 ```javascript
@@ -243,6 +264,29 @@ Remove documents with `deleteOne` (one match) or `deleteMany` (all matches). Use
 db.items.deleteOne({ name: "orange" })
 db.items.find().pretty()
 ```
+
+### Insert from file
+
+So far you typed documents into the shell. You can also load JSON from a file. That's useful when the data already exists on disk (exports, downloads, or lab sample files).
+
+Sample file: [`data/items.json`](data/items.json) (a JSON **array** of documents, ready for `insertMany`).
+
+**1.** In your laptop terminal (bash/zsh, not inside `mongosh`), go to this class folder so the file path below resolves:
+
+```bash
+cd class/05-nosql
+```
+
+**2.** Connect with `mongosh` as before, then run:
+
+```javascript
+use mypractice
+const docs = JSON.parse(fs.readFileSync("data/items.json", "utf8"))
+db.items.insertMany(docs)
+db.items.find().pretty()
+```
+
+`fs.readFileSync` reads the file from disk; `JSON.parse` turns the text into an array of objects; `insertMany` writes them into the collection. Paths are relative to the directory where you started `mongosh`.
 
 ### MongoDB + Python
 
