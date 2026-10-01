@@ -20,8 +20,9 @@ fruit = db.fruit
 get_one = fruit.find_one()
 log.info("One document: %s", dumps(get_one, indent=2))
 
-get_another = fruit.find({"name": "apple"})
-log.info("%s", dumps(list(get_another), indent=2))
+# Prefer names the mongosh exercises usually leave in place (banana / orange)
+get_banana = fruit.find({"name": "banana"})
+log.info("Documents named banana:\n%s", dumps(list(get_banana), indent=2))
 
 get_more = fruit.count_documents({"quantity": {"$gte": 5}})
 log.info("%s fruit with quantity >= 5", get_more)

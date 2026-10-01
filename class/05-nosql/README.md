@@ -29,6 +29,22 @@ MongoDB's strongest features for data science are:
 
 This course will be using MongoDB Atlas, a cloud-based Mongo service, for hands-on exercises. Follow the [MongoDB Setup instructions](../../setup/mongodb.md).
 
+## Viewing MongoDB in Cursor
+
+You can browse databases, collections, and documents inside Cursor (or VS Code) instead of only using `mongosh`.
+
+1. In [MongoDB Atlas](https://cloud.mongodb.com/), open your cluster and click **Connect**.
+2. Choose **MongoDB for VS Code** and copy the connection string. It looks like:
+
+```text
+mongodb+srv://YOUR_USERNAME:<db_password>@YOUR_CLUSTER.mongodb.net/
+```
+
+3. In Cursor, go to **File** > **New Text File** and paste the connection string into it. Replace `<db_password>` with your real Atlas password (keep the rest of the string). Save that string for the next step.
+4. Install **[MongoDB for VS Code](https://marketplace.visualstudio.com/items?itemName=mongodb.mongodb-vscode)** (`mongodb.mongodb-vscode`) from the Extensions view (`Cmd+Shift+X` / `Ctrl+Shift+X`).
+5. Open the MongoDB sidebar (leaf icon) → **Add Connection** → **Connect with Connection String**. Paste the string from step 3 and press Enter.
+6. Expand the connection to browse databases such as `sample_mflix` and `mypractice`, open collections, and inspect documents.
+
 
 ## In-class exercises
 
@@ -46,7 +62,7 @@ If you don't have it installed yet, follow [MongoDB Setup](../../setup/mongodb.m
 mongosh --version
 ```
 
-**1. Open a terminal** in Cursor (or your usual shell). On Windows, use a **WSL** terminal so `mongosh` and your Atlas env vars match the Linux setup from the course docs.
+**1. Open a terminal** in Cursor (or your usual shell). On Windows, use a **WSL** terminal so `mongosh` and your Atlas environment variables match the Linux setup from the course docs.
 
 **2. Go to this activity folder** before you start `mongosh`. File paths later in the lab (for example `data/fruit.json`) are relative to this directory:
 
@@ -141,7 +157,7 @@ db.movies.find().limit(3)
 ```
 
 - `findOne()` returns a single document.
-- With no filter (or several matches), that document is in **natural order** (roughly the first the server finds), not “last inserted” and not random.
+- With no filter (or several matches), that document is in **natural order** (roughly the first the server finds).
 - Use a filter and/or `sort` when you need a specific document (see [Search with filters](#search-with-filters)).
 - `find()` returns a **cursor** (a handle to zero or more matching documents).
 - Current `mongosh` already prints cursor results as indented JSON, so `.pretty()` usually makes no visible difference.
@@ -254,6 +270,60 @@ db.movies.find({ year: { $gte: 2012, $lte: 2016 } }).sort({ year: -1, title: 1 }
 
 </details>
 
+### Join related collections
+
+Related data often lives in **different collections**. Instead of copying a whole movie into every comment, `sample_mflix` stores a **reference**: each comment has a `movie_id` field whose value is the `_id` of a document in `movies`.
+
+The `text` on comments is **synthetic sample data** (placeholder prose, not real reviews). Use it to practice references and joins; do not treat the wording as authentic content.
+
+This is not a SQL `JOIN`. You either look up the related document yourself, or use aggregation `$lookup` (MongoDB's server-side join).
+
+**Start from a movie students know**, then find one of its comments (stay in `sample_mflix`):
+
+```javascript
+use sample_mflix
+const movie = db.movies.findOne({ title: "The Godfather" }, { title: 1, year: 1 })
+movie
+const comment = db.comments.findOne({ movie_id: movie._id }, { name: 1, text: 1, movie_id: 1 })
+comment
+```
+
+- `comment.movie_id` is an `ObjectId` that points at `movies._id` (here, The Godfather).
+
+**Manual reference lookup** (follow the reference the other way: comment → movie):
+
+```javascript
+db.movies.findOne({ _id: comment.movie_id }, { title: 1, year: 1, _id: 0 })
+```
+
+- The filter uses the comment's `movie_id` as the movie `_id`.
+- The projection returns only `title` and `year`.
+
+**Server-side join with `$lookup`** (several comments on that same movie):
+
+```javascript
+db.comments.aggregate([
+  { $match: { movie_id: movie._id } },
+  { $limit: 3 },
+  { $lookup: {
+      from: "movies",
+      localField: "movie_id",
+      foreignField: "_id",
+      as: "movie"
+  }},
+  { $project: { name: 1, text: 1, "movie.title": 1, "movie.year": 1, _id: 0 } }
+])
+```
+
+- `$match` restricts to comments for The Godfather.
+- `$lookup` matches `comments.movie_id` to `movies._id` and stores matches in an array field named `movie` (usually one element).
+- `$project` keeps selected comment fields plus the joined movie title and year.
+- Some other comments in `sample_mflix` have a `movie_id` with no matching movie (`movie: []`). That is an orphaned reference.
+
+**Try:** change `{ title: "The Godfather" }` to another film that has comments (for example `"The Matrix"` or `"Pulp Fiction"`), or project `movie.genres` instead of `movie.year`. Some well-known titles in `sample_mflix` have **zero** comments (for example `"Casablanca"`); for those, `findOne` on comments returns `null` and the join steps will not work until you pick a title with comments.
+
+**Embed the other way (movie root, comments array):** see [`09-mongo_embed.py`](09-mongo_embed.py). That script builds one document with The Godfather as the root and all of its comments nested under `comments`, then inserts it into `mypractice.movies_with_comments`.
+
 ### Create Operations
 
 Let's switch gears and create your own database and collection in the Atlas Cluster. Insert operations add new documents to a collection. If the collection does not exist, MongoDB creates it. 
@@ -331,7 +401,7 @@ db.fruit.find()
 Remove documents with `deleteOne` (one match) or `deleteMany` (all matches). Use a filter to limit what is removed.
 
 ```javascript
-db.fruit.deleteOne({ name: "orange" })
+db.fruit.deleteOne({ name: "apple" })
 db.fruit.find()
 ```
 
@@ -428,17 +498,21 @@ uv run --with pymongo python -c "import pymongo; print(pymongo.__version__)"
 
 **Shared connection:** [`database.py`](database.py) builds a shared `client`, `db` (`mypractice`), and `fruit` collection. [`02-mongo_setup.py`](02-mongo_setup.py) imports that module; the other scripts open their own client with the same env vars.
 
-**Numbered scripts (run in order 01 → 07):**
+Shell and Python both use `mypractice.fruit` and the same starter names (apple, banana, orange). The **update/delete targets differ** so the Python scripts still change visible data if you already finished the mongosh exercises (mongosh: update/delete **apple**; Python: update **banana** / **orange**, delete **orange**).
+
+**Numbered scripts (run in order 01 → 09):**
 
 | Script | Purpose |
 |--------|---------|
 | [`01-sample_mflix.py`](01-sample_mflix.py) | Connect to `sample_mflix`, list collections and document counts |
 | [`02-mongo_setup.py`](02-mongo_setup.py) | Use shared client from `database.py`; show server version, databases, and `mypractice` collection counts |
 | [`03-mongo_create.py`](03-mongo_create.py) | Create `mypractice` / `fruit` and insert sample documents (apple, banana, orange) |
-| [`04-mongo_read.py`](04-mongo_read.py) | Read documents: find one, find by filter, count |
-| [`05-mongo_update.py`](05-mongo_update.py) | Update documents with `$set` |
-| [`06-mongo_delete.py`](06-mongo_delete.py) | Delete one document and show remaining |
+| [`04-mongo_read.py`](04-mongo_read.py) | Read documents: find one, find banana, count |
+| [`05-mongo_update.py`](05-mongo_update.py) | Update banana quantity and set orange `restocked` (not the mongosh apple path) |
+| [`06-mongo_delete.py`](06-mongo_delete.py) | Delete orange and show remaining |
 | [`07-mongo_summary.py`](07-mongo_summary.py) | Log a final summary of `mypractice` collections and `fruit` |
+| [`08-mongo_join.py`](08-mongo_join.py) | Join `comments` to `movies` via `movie_id` (`sample_mflix`; manual lookup and `$lookup`) |
+| [`09-mongo_embed.py`](09-mongo_embed.py) | Embed comments into a movie document and save it in `mypractice.movies_with_comments` |
 
 ```bash
 uv run --with pymongo 01-sample_mflix.py
@@ -448,9 +522,11 @@ uv run --with pymongo 04-mongo_read.py
 uv run --with pymongo 05-mongo_update.py
 uv run --with pymongo 06-mongo_delete.py
 uv run --with pymongo 07-mongo_summary.py
+uv run --with pymongo 08-mongo_join.py
+uv run --with pymongo 09-mongo_embed.py
 ```
 
-If you already ran `uv add pymongo` in a project, plain `uv run 01-sample_mflix.py` (and so on) is enough.
+If you already ran `uv add pymongo` in a project, plain `uv run 01-sample_mflix.py` (and so on) is enough. Scripts `08` and `09` use `sample_mflix` and do not depend on the `fruit` CRUD scripts (you can run them after `01`). Re-running `09` inserts another copy into `movies_with_comments` each time.
 
 ## Advanced Concepts (Optional)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Delete documents from mypractice.fruit."""
+"""Delete from mypractice.fruit (orange; mongosh deletes apple)."""
 import logging
 import os
 
@@ -17,14 +17,14 @@ client = MongoClient(uri, username=username, password=password, connectTimeoutMS
 db = client.mypractice
 fruit = db.fruit
 
-get_record = fruit.find({"name": "apple"})
-log.info("Documents matching name 'apple': %s", dumps(list(get_record), indent=2))
+get_record = fruit.find({"name": "orange"})
+log.info("Documents matching name 'orange': %s", dumps(list(get_record), indent=2))
 
-fruit.delete_one({"name": "apple"})
+fruit.delete_one({"name": "orange"})
 
 get_record = fruit.find({})
 log.info("All documents after delete: %s", dumps(list(get_record), indent=2))
 
-# To delete all documents matching a filter: fruit.delete_many({"name": "orange"})
+# To delete all documents matching a filter: fruit.delete_many({"name": "banana"})
 
 client.close()

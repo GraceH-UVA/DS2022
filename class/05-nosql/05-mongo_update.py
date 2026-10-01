@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update documents in mypractice.fruit with $set."""
+"""Update mypractice.fruit (targets differ from the mongosh apple / updateMany examples)."""
 import logging
 import os
 
@@ -18,17 +18,15 @@ db = client.mypractice
 fruit = db.fruit
 
 log.info("Before update:")
-get_record = fruit.find({"name": "apple"})
-log.info("%s", dumps(list(get_record), indent=2))
+log.info("%s", dumps(list(fruit.find({})), indent=2))
 
-log.info("Updating apple quantity to 8 and restocked to True:")
-fruit.update_one({"name": "apple"}, {"$set": {"quantity": 8}})
-fruit.update_one({"name": "apple"}, {"$set": {"restocked": True}})
+# Distinct from mongosh (which updates apple and uses updateMany on quantity < 10)
+fruit.update_one({"name": "banana"}, {"$set": {"quantity": 12}})
+fruit.update_one({"name": "orange"}, {"$set": {"restocked": True}})
 
 # Full list of MongoDB operators: https://www.mongodb.com/docs/manual/reference/operator/
 
 log.info("After update:")
-get_record = fruit.find({"name": "apple"})
-log.info("%s", dumps(list(get_record), indent=2))
+log.info("%s", dumps(list(fruit.find({})), indent=2))
 
 client.close()

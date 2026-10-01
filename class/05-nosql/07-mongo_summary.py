@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Log a summary of mypractice after running scripts 01-06."""
+"""Log a summary of mypractice after the fruit CRUD scripts (03–06)."""
 import logging
 import os
 
